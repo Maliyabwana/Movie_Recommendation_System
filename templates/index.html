@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie Recommendation System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Movie Recommendation System</h1>
+    <form id="recommend-form" method="POST" action="/recommend">
+        <label for="movie_search">Search and Select Movie:</label>
+        <div class="search-container">
+            <input type="text" id="movie_search" placeholder="Type to search movies..." onkeyup="filterMovies()">
+            <select name="movie_id" id="movie_id" required>
+                <option value="" disabled selected>Select a movie</option>
+                {% for movie in movies %}
+                    <option value="{{ movie.movieId }}">{{ movie.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <label for="genre">Select Genre:</label>
+        <select name="genre" id="genre">
+            <option value="All">All Genres</option>
+            {% for genre in genres %}
+                <option value="{{ genre }}">{{ genre }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Get Recommendations</button>
+    </form>
+    <form id="clear-history-form" method="POST" action="/clear_history">
+        <button type="submit">Clear History</button>
+    </form>
+    <div id="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    <div id="result"></div>
+    {% if history %}
+        <div class="history-section">
+            <h2>Recommendation History</h2>
+            <div class="card-grid">
+                {% for movie in history %}
+                    <div class="card">
+                        {% if movie.poster_path %}
+                            <img src="{{ movie.poster_path }}" alt="{{ movie.title }}">
+                        {% else %}
+                            <div class="no-poster">No Poster Available</div>
+                        {% endif %}
+                        <div class="card-overlay">
+                            <h3>{{ movie.title }}</h3>
+                            <p><strong>Genres:</strong> {{ movie.genres }}</p>
+                            <p>{{ movie.overview }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    <script>
+        function filterMovies() {
+            const input = document.getElementById('movie_search').value.toLowerCase();
+            const select = document.getElementById('movie_id');
+            const options = select.getElementsByTagName('option');
+
+            for (let i = 0; i < options.length; i++) {
+                const text = options[i].text.toLowerCase();
+                if (text.includes(input) || input === '') {
+                    options[i].style.display = '';
+                } else {
+                    options[i].style.display = 'none';
+                }
+            }
+        }
+
+        // Handle form submission for recommendations
+        document.getElementById('recommend-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const resultDiv = document.getElementById('result');
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            resultDiv.innerHTML = '';
+
+            try {
+                const response = await fetch('/recommend', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Render recommendations
+                    let html = '<h2>Recommended Movies</h2><div class="card-grid">';
+                    data.forEach(movie => {
+                        html += `
+                            <div class="card">
+                                ${movie.poster_path ? `<img src="${movie.poster_path}" alt="${movie.title}">` : '<div class="no-poster">No Poster Available</div>'}
+                                <div class="card-overlay">
+                                    <h3>${movie.title}</h3>
+                                    <p><strong>Genres:</strong> ${movie.genres}</p>
+                                    <p>${movie.overview}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Handle clear history form submission
+        document.getElementById('clear-history-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const resultDiv = document.getElementById('result');
+
+            try {
+                const response = await fetch('/clear_history', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `<p style="color: green;">${data.message}</p>`;
+                    // Optionally refresh the history section
+                    window.location.reload();
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
