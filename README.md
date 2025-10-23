@@ -2,7 +2,7 @@
 
 A collaborative filtering-based movie recommendation web application built with Flask, SVD dimensionality reduction, and The Movie Database (TMDB) API integration. Users can search and select movies, filter by genre, and receive personalized recommendations based on user ratings data.
 
-![Movie Recommendation System Demo](https://via.placeholder.com/800x400?text=Movie+Recommendation+System+Demo) <!-- Replace with a screenshot if you have one -->
+![Movie Recommendation System Demo](/img/demo.png) <!-- Replace with a screenshot if you have one -->
 
 ## Features
 
